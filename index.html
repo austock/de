@@ -29,28 +29,41 @@
       height: 44px;
       transition: background 0.2s;
     }
-    nav button:hover {
-      background: #6c757d;
-    }
+    nav button:hover { background: #6c757d; }
 
-    .page {
+    .page { display: none; padding: 20px; text-align: center; }
+    .active { display: block; }
+
+    h1 { font-size: 28px; margin-bottom: 10px; }
+    p { font-size: 16px; line-height: 1.6; }
+
+    /* --- 퀴즈 스타일 --- */
+    .question { font-size: 32px; margin: 40px 0 20px; }
+    .options { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+    .options button {
+      font-size: 20px;
+      padding: 15px 30px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #dee2e6;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .options button:hover { background: #ced4da; }
+    .result { font-size: 22px; font-weight: bold; margin-top: 10px; min-height: 30px; }
+    #gender-next-btn {
+      margin-top: 15px;
+      font-size: 18px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
       display: none;
-      padding: 20px;
-      text-align: center;
     }
-    .active {
-      display: block;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-
-    p {
-      font-size: 16px;
-      line-height: 1.6;
-    }
+    #gender-next-btn:hover { background: #0056b3; }
 
     footer {
       margin-top: 50px;
@@ -59,10 +72,39 @@
       font-size: 14px;
       color: #666;
     }
+    /* --- 수사 퀴즈 모드 전환 버튼 (독일어↔숫자) 스타일 --- */
+.mode-switch {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.mode-switch button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background: #ccc;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.mode-switch button:hover {
+  background: #bdbdbd;
+}
+
+.mode-switch button.active {
+  background: #007bff;
+  color: white;
+  font-weight: bold;
+  transform: scale(1.03);
+}
+
   </style>
 </head>
 <body>
-  <!-- 상단 메뉴 -->
+  <!-- 네비게이션 -->
   <nav>
     <button onclick="showPage('main')">메인 페이지</button>
     <button onclick="showPage('numbers')">수사 문제</button>
@@ -70,60 +112,1064 @@
     <button onclick="showPage('about')">About</button>
   </nav>
 
-  <!-- 메인 페이지 -->
+  <!-- 메인 -->
   <div id="main" class="page active">
     <h1>🇩🇪 독일어 학습</h1>
     <p>
       <strong>1. 수사 문제</strong><br>
-      숫자(1~100 등)를 독일어로 맞추는 연습입니다.  
-      버튼 선택형 퀴즈 형식으로 구성됩니다.
+      숫자를 독일어로 맞추는 객관식 퀴즈입니다.
     </p>
     <p>
       <strong>2. 명사 성별</strong><br>
-      주어진 단어가 <code>der / die / das</code> 중 어떤 정관사를 가지는지 선택하는 퀴즈입니다.  
-      엑셀 데이터를 기반으로 자동으로 출제됩니다.
+      주어진 명사의 정관사(<code>der/die/das</code>)를 맞추는 객관식 퀴즈입니다.
     </p>
     <p>
-      <strong>3. 사용 방법</strong><br>
-      상단 메뉴에서 원하는 퀴즈를 클릭하면 해당 학습 모드로 이동합니다.<br>
-      각 퀴즈는 나중에 별도로 기능이 추가될 예정입니다.
+      <strong>3. 키보드 조작</strong><br>
+      숫자키 1→ der / 2→ die / 3→ das 선택<br>
+      Enter 키 → 다음 문제로 이동
     </p>
   </div>
 
-  <!-- 수사 문제 페이지 -->
-  <div id="numbers" class="page">
-    <h1>독일어 수사 퀴즈</h1>
-    <p>이 페이지에는 나중에 수사 퀴즈 기능이 추가될 예정입니다.</p>
+  <!-- 수사 문제 -->
+
+<div id="numbers" class="page">
+  <h1>독일어 수사 퀴즈</h1>
+
+  <!-- ① 모드 선택 버튼 -->
+  <div class="mode-switch">
+    <button id="btn-de2num" class="active" onclick="switchNumMode('de2num')">독일어 → 숫자</button>
+    <button id="btn-num2de" onclick="switchNumMode('num2de')">숫자 → 독일어</button>
   </div>
 
-  <!-- 명사 성별 페이지 -->
+  <!-- ② 문제 영역 -->
+  <div id="numbers-question" style="font-size: 24px; margin: 20px 0;">문제가 여기에 표시됩니다.</div>
+
+  <!-- ③ 입력창 -->
+  <input id="numbers-input" type="text" placeholder="정답을 입력하세요" style="font-size: 20px; padding: 8px; width: 250px; text-align: center;">
+
+  <!-- ④ 결과 표시 -->
+  <div id="numbers-result" class="result"></div>
+
+  <!-- ⑤ 다음 문제 버튼 -->
+  <button id="numbers-next-btn" onclick="nextNumbersQuestion()" style="display:none; margin-top: 15px; font-size: 18px;">다음 문제</button>
+</div>
+
+  </div>
+
+  <!-- 명사 성별 퀴즈 -->
   <div id="gender" class="page">
     <h1>독일어 명사 성별 퀴즈</h1>
-    <p>이 페이지에는 <strong>der / die / das</strong> 객관식 퀴즈가 추가될 예정입니다.</p>
+    <div class="question" id="gender-question">문제가 여기에 표시됩니다.</div>
+    <div class="options" id="gender-options"></div>
+    <div class="result" id="gender-result"></div>
+    <button id="gender-next-btn" onclick="nextGenderQuestion()">다음 문제</button>
   </div>
 
-  <!-- About 페이지 -->
+  <!-- About -->
   <div id="about" class="page">
     <h1>About</h1>
-    <p>
-      이 웹앱은 독일어 학습을 위해 제작되었습니다.<br>
-      차후 명사 성별, 수사, 동사 활용, 문장 구성 등 다양한 퀴즈가 추가될 예정입니다.
-    </p>
+    <p>이 웹앱은 독일어 기초 어휘를 학습하기 위한 개인 프로젝트입니다.</p>
   </div>
 
   <footer>
-    © 2025 독일어 학습 퀴즈 | 제작: @austock21
+    © 2025 독일어 학습 퀴즈 | 제작: austock21
   </footer>
 
   <script>
-    // 페이지 전환 함수
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-      });
-      document.getElementById(pageId).classList.add('active');
+
+    // ===== 수사 퀴즈 =====
+    let numMode = 'de2num'; // 현재 모드 ('de2num' 또는 'num2de')
+    let numbersDe = {};      // 숫자 사전 (0~100)
+    let currentNum = null;   // 현재 문제 숫자
+    let numbersAnswered = false;
+
+    // 수사 데이터 정의
+    numbersDe = {
+      0: "null", 1: "eins", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf",
+    6: "sechs", 7: "sieben", 8: "acht", 9: "neun", 10: "zehn",
+    11: "elf", 12: "zwölf", 13: "dreizehn", 14: "vierzehn", 15: "fünfzehn",
+    16: "sechzehn", 17: "siebzehn", 18: "achtzehn", 19: "neunzehn",
+    20: "zwanzig", 21: "einundzwanzig", 22: "zweiundzwanzig", 23: "dreiundzwanzig",
+    24: "vierundzwanzig", 25: "fünfundzwanzig", 26: "sechsundzwanzig",
+    27: "siebenundzwanzig", 28: "achtundzwanzig", 29: "neunundzwanzig",
+    30: "dreißig", 31: "einunddreißig", 32: "zweiunddreißig", 33: "dreiunddreißig",
+    34: "vierunddreißig", 35: "fünfunddreißig", 36: "sechsunddreißig",
+    37: "siebenunddreißig", 38: "achtunddreißig", 39: "neununddreißig",
+    40: "vierzig", 41: "einundvierzig", 42: "zweiundvierzig", 43: "dreiundvierzig",
+    44: "vierundvierzig", 45: "fünfundvierzig", 46: "sechsundvierzig",
+    47: "siebenundvierzig", 48: "achtundvierzig", 49: "neunundvierzig",
+    50: "fünfzig", 51: "einundfünfzig", 52: "zweiundfünfzig", 53: "dreiundfünfzig",
+    54: "vierundfünfzig", 55: "fünfundfünfzig", 56: "sechsundfünfzig",
+    57: "siebenundfünfzig", 58: "achtundfünfzig", 59: "neunundfünfzig",
+    60: "sechzig", 61: "einundsechzig", 62: "zweiundsechzig", 63: "dreiundsechzig",
+    64: "vierundsechzig", 65: "fünfundsechzig", 66: "sechsundsechzig",
+    67: "siebenundsechzig", 68: "achtundsechzig", 69: "neunundsechzig",
+    70: "siebzig", 71: "einundsiebzig", 72: "zweiundsiebzig", 73: "dreiundsiebzig",
+    74: "vierundsiebzig", 75: "fünfundsiebzig", 76: "sechsundsiebzig",
+    77: "siebenundsiebzig", 78: "achtundsiebzig", 79: "neunundsiebzig",
+    80: "achtzig", 81: "einundachtzig", 82: "zweiundachtzig", 83: "dreiundachtzig",
+    84: "vierundachtzig", 85: "fünfundachtzig", 86: "sechsundachtzig",
+    87: "siebenundachtzig", 88: "achtundachtzig", 89: "neunundachtzig",
+    90: "neunzig", 91: "einundneunzig", 92: "zweiundneunzig", 93: "dreiundneunzig",
+    94: "vierundneunzig", 95: "fünfundneunzig", 96: "sechsundneunzig",
+    97: "siebenundneunzig", 98: "achtundneunzig", 99: "neunundneunzig", 100: "hundert"
+    };
+
+    function switchNumMode(mode) {
+    numMode = mode;
+    document.getElementById('btn-de2num').classList.toggle('active', mode === 'de2num');
+    document.getElementById('btn-num2de').classList.toggle('active', mode === 'num2de');
+    document.getElementById('numbers-result').textContent = '';
+    nextNumbersQuestion();
     }
+
+
+
+    function nextNumbersQuestion() {
+  numbersAnswered = false;
+  document.getElementById('numbers-input').value = '';
+  document.getElementById('numbers-result').textContent = '';
+  document.getElementById('numbers-next-btn').style.display = 'none';
+
+  const keys = Object.keys(numbersDe).map(k => Number(k));
+  const rnd = keys[Math.floor(Math.random() * keys.length)];
+  currentNum = rnd;
+  const word = numbersDe[rnd];
+
+  if (numMode === 'de2num') {
+    document.getElementById('numbers-question').textContent = `문제: ${word}`;
+    document.getElementById('numbers-input').placeholder = "숫자를 입력하세요";
+  } else {
+    document.getElementById('numbers-question').textContent = `문제: ${rnd}`;
+    document.getElementById('numbers-input').placeholder = "독일어로 입력하세요";
+  }
+}
+
+  function simplify(str) {
+  return str.toLowerCase()
+    .replace(/ü/g, 'u').replace(/ö/g, 'o')
+    .replace(/ä/g, 'a').replace(/ß/g, 's');
+}
+
+function checkNumbersAnswer() {
+  if (numbersAnswered) return;
+  numbersAnswered = true;
+
+  const input = document.getElementById('numbers-input').value.trim();
+  const result = document.getElementById('numbers-result');
+  const correctWord = numbersDe[currentNum];
+  const correctNum = String(currentNum);
+
+  if (numMode === 'de2num') {
+    if (input === correctNum) {
+      result.textContent = "✅ 정답입니다!";
+    } else {
+      result.textContent = `❌ 오답입니다. 정답: ${correctNum} (${correctWord})`;
+    }
+  } else {
+    if (simplify(input) === simplify(correctWord)) {
+      result.textContent = "✅ 정답입니다!";
+    } else {
+      result.textContent = `❌ 오답입니다. 정답: ${correctWord} (${correctNum})`;
+    }
+  }
+
+  document.getElementById('numbers-next-btn').style.display = 'inline-block';
+}
+
+
+
+    // -------------------------
+    // 페이지 전환
+    // -------------------------
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      if (pageId === 'gender') nextGenderQuestion(); // 명사 성별 페이지 진입 시 자동 문제 출제
+      if (pageId === 'numbers') nextNumbersQuestion(); // 수사 퀴즈 페이지 진입 시 자동 문제 출제
+    }
+
+    // -------------------------
+    // 명사 성별 퀴즈 데이터
+    // -------------------------
+    const quizData = [
+      { word: "Abend", article: "der" },
+      { word: "Achterbahn", article: "die" },
+      { word: "Addition(en)", article: "die" },
+      { word: "Addresse", article: "die" },
+      { word: "Adresse", article: "die" },
+      { word: "Affe", article: "der" },
+      { word: "Alkohol", article: "der" },
+      { word: "Allergie", article: "die" },
+      { word: "Alter", article: "das" },
+      { word: "Amerikaner", article: "der" },
+      { word: "Ampel", article: "die" },
+      { word: "Amt", article: "das" },
+      { word: "Ananas", article: "die" },
+      { word: "Anfang", article: "der" },
+      { word: "Angst(Ängste)", article: "die" },
+      { word: "Ankunft", article: "die" },
+      { word: "Anschrift", article: "die" },
+      { word: "Antwort", article: "die" },
+      { word: "Anzug", article: "der" },
+      { word: "Apfel", article: "der" },
+      { word: "Apfelkuchen", article: "der" },
+      { word: "Apotheke", article: "die" },
+      { word: "Apotheker", article: "der" },
+      { word: "Apothekerin", article: "die" },
+      { word: "April", article: "der" },
+      { word: "Arbeit", article: "die" },
+      { word: "Arbeiter", article: "der" },
+      { word: "Arbeitslose", article: "der" },
+      { word: "Arbeitszeit", article: "die" },
+      { word: "Arm", article: "der" },
+      { word: "Armband(Armbänder)", article: "das" },
+      { word: "Arzt(Ärzte)", article: "der" },
+      { word: "Ärztin", article: "die" },
+      { word: "Ärztin(Ärztinen)", article: "die" },
+      { word: "Aufzug", article: "der" },
+      { word: "Auge(n)", article: "das" },
+      { word: "Augen", article: "die" },
+      { word: "August", article: "der" },
+      { word: "Ausbildung", article: "die" },
+      { word: "Ausflug", article: "der" },
+      { word: "Ausgang", article: "der" },
+      { word: "Ausland", article: "das" },
+      { word: "Auslandsstudium", article: "das" },
+      { word: "Auto", article: "das" },
+      { word: "Autobahn", article: "die" },
+      { word: "Baby(s)", article: "das" },
+      { word: "Bäcker", article: "der" },
+      { word: "Bäckerei", article: "die" },
+      { word: "Bäckerin", article: "die" },
+      { word: "Bad", article: "das" },
+      { word: "Bad", article: "das" },
+      { word: "Bademantel", article: "das" },
+      { word: "Badezimmer", article: "das" },
+      { word: "Bahnhof", article: "der" },
+      { word: "Balkon", article: "der" },
+      { word: "Ball", article: "der" },
+      { word: "Banane", article: "die" },
+      { word: "Bandage(n)", article: "die" },
+      { word: "Bank", article: "die" },
+      { word: "Bankangestellte", article: "die" },
+      { word: "Bär ", article: "der" },
+      { word: "Barbecue(s)", article: "das" },
+      { word: "Bargeld", article: "das" },
+      { word: "Bart", article: "der" },
+      { word: "Baseball", article: "der" },
+      { word: "Basketball", article: "der" },
+      { word: "Bauch", article: "der" },
+      { word: "Beamte", article: "der" },
+      { word: "Beilage", article: "die" },
+      { word: "Beispiel", article: "das" },
+      { word: "Besprechung", article: "die" },
+      { word: "Bestellung", article: "die" },
+      { word: "Bestseller", article: "der" },
+      { word: "Bett", article: "das" },
+      { word: "Bettuch", article: "das" },
+      { word: "Bibliothek(en)", article: "die" },
+      { word: "Bidet", article: "das" },
+      { word: "Bier(e)", article: "das" },
+      { word: "Bikini", article: "der" },
+      { word: "Bild", article: "das" },
+      { word: "Biologie", article: "die" },
+      { word: "Blog", article: "der" },
+      { word: "Blume(n)", article: "die" },
+      { word: "Bluse(n)", article: "die" },
+      { word: "Blut", article: "das" },
+      { word: "Bonbon", article: "der" },
+      { word: "Bonbon(s)", article: "das" },
+      { word: "Bonus", article: "der" },
+      { word: "Boxen", article: "das" },
+      { word: "Braut", article: "die" },
+      { word: "Brief", article: "der" },
+      { word: "Brief(e)", article: "der" },
+      { word: "Briefmarke", article: "die" },
+      { word: "Brille", article: "die" },
+      { word: "Brokkoli", article: "die" },
+      { word: "Bronze", article: "die" },
+      { word: "Brot", article: "das" },
+      { word: "Brot(e)", article: "das" },
+      { word: "Brücke", article: "die" },
+      { word: "Bruder", article: "der" },
+      { word: "Bruder(Brüder)", article: "der" },
+      { word: "Brust", article: "die" },
+      { word: "Buch(Bücher)", article: "das" },
+      { word: "Bücherschrank", article: "der" },
+      { word: "Büro", article: "das" },
+      { word: "Bus", article: "der" },
+      { word: "Busbahnhof", article: "der" },
+      { word: "Butter", article: "die" },
+      { word: "Café", article: "das" },
+      { word: "Cafeteria", article: "die" },
+      { word: "CD-Player", article: "der" },
+      { word: "Cent", article: "der" },
+      { word: "Charme", article: "der" },
+      { word: "Chef", article: "der" },
+      { word: "Cocktail", article: "der" },
+      { word: "Cola", article: "die" },
+      { word: "Cola", article: "die" },
+      { word: "Computer", article: "der" },
+      { word: "Coupon", article: "die" },
+      { word: "Cousin", article: "der" },
+      { word: "Cousine", article: "die" },
+      { word: "Cousine(n)", article: "die" },
+      { word: "Currywurst", article: "die" },
+      { word: "Dame(n)", article: "die" },
+      { word: "Damenbinde(n)", article: "die" },
+      { word: "Dampf", article: "der" },
+      { word: "Daten", article: "die" },
+      { word: "Datum(Daten)", article: "das" },
+      { word: "Deckel", article: "der" },
+      { word: "Deutsche", article: "das" },
+      { word: "Deutsche", article: "die" },
+      { word: "Dezember", article: "der" },
+      { word: "Dieb(e)", article: "der" },
+      { word: "Dienstag", article: "der" },
+      { word: "Dirigent", article: "der" },
+      { word: "Doktor", article: "der" },
+      { word: "Dollar", article: "der" },
+      { word: "Donnerstag", article: "der" },
+      { word: "Doppelzimmer", article: "das" },
+      { word: "Durchschnitt(e)", article: "der" },
+      { word: "Dusche", article: "die" },
+      { word: "Duschgel", article: "das" },
+      { word: "E-Mail", article: "die" },
+      { word: "E-Mail-Adresse", article: "die" },
+      { word: "E-Mail(s)", article: "die" },
+      { word: "E-Mailadresse(n)", article: "die" },
+      { word: "Ei", article: "das" },
+      { word: "Ei(er)", article: "das" },
+      { word: "Einkommen", article: "das" },
+      { word: "Einladung", article: "die" },
+      { word: "Eintrittskarte", article: "die" },
+      { word: "Eis", article: "das" },
+      { word: "Elefant", article: "der" },
+      { word: "Elektronik", article: "die" },
+      { word: "Eltern", article: "die" },
+      { word: "Ende", article: "das" },
+      { word: "Englisch", article: "das" },
+      { word: "Englisch", article: "das" },
+      { word: "Erdbeere", article: "die" },
+      { word: "Erdbeere(n)", article: "die" },
+      { word: "Erinnerung, -en", article: "die" },
+      { word: "Erkältung", article: "die" },
+      { word: "erste Liebe", article: "die" },
+      { word: "Erwachsene", article: "der" },
+      { word: "Erwachsene", article: "die" },
+      { word: "Erwachsene", article: "die" },
+      { word: "Erwachsene(n)", article: "der" },
+      { word: "Essen", article: "das" },
+      { word: "Etage", article: "die" },
+      { word: "Euro", article: "der" },
+      { word: "Fabrik", article: "die" },
+      { word: "Faden(Fäden)", article: "der" },
+      { word: "Fahrbahn", article: "die" },
+      { word: "Fahrrad(Fahrräder)", article: "das" },
+      { word: "Familie", article: "die" },
+      { word: "Familienfoto", article: "das" },
+      { word: "Farbe(n)", article: "die" },
+      { word: "Fax", article: "das" },
+      { word: "Februar", article: "der" },
+      { word: "Feld", article: "das" },
+      { word: "Fenster", article: "das" },
+      { word: "Fernseher", article: "der" },
+      { word: "Fest", article: "das" },
+      { word: "feste Freund", article: "der" },
+      { word: "feste Freundin", article: "die" },
+      { word: "Feuer", article: "das" },
+      { word: "Film", article: "der" },
+      { word: "Finanzen", article: "die" },
+      { word: "Firewall(s)", article: "die" },
+      { word: "Firma", article: "die" },
+      { word: "Fisch", article: "der" },
+      { word: "Flaschenöffner", article: "der" },
+      { word: "Fleisch", article: "das" },
+      { word: "Fleischgericht", article: "das" },
+      { word: "Flugbegleiter", article: "der" },
+      { word: "Flugbegleiterin(nen)", article: "die" },
+      { word: "Flughafen(Flughäfen)", article: "das" },
+      { word: "Flugticket", article: "das" },
+      { word: "Flugzeug", article: "das" },
+      { word: "Flugzeug(e)", article: "das" },
+      { word: "Fluss(Flüsse)", article: "der" },
+      { word: "Föhn", article: "der" },
+      { word: "Föhn(e)", article: "der" },
+      { word: "Formular", article: "das" },
+      { word: "Foto(s)", article: "das" },
+      { word: "Frage", article: "die" },
+      { word: "Frau", article: "die" },
+      { word: "Frau(en)", article: "die" },
+      { word: "Frauen-Universität", article: "die" },
+      { word: "Freiheit", article: "die" },
+      { word: "Freitag", article: "der" },
+      { word: "Fremdsprache", article: "die" },
+      { word: "Freund", article: "der" },
+      { word: "Freund(e)", article: "der" },
+      { word: "Freundin", article: "die" },
+      { word: "Freundin(nen)", article: "die" },
+      { word: "Friseur(=Frisör)", article: "der" },
+      { word: "Friseuse(=Frisörin)", article: "die" },
+      { word: "Frisörsalon", article: "die" },
+      { word: "Frucht", article: "die" },
+      { word: "Frühling", article: "der" },
+      { word: "Frühstück", article: "das" },
+      { word: "Führerschein(e)", article: "der" },
+      { word: "Fuß ", article: "der" },
+      { word: "Game", article: "das" },
+      { word: "Garage", article: "die" },
+      { word: "Garten(Gärten)", article: "der" },
+      { word: "Gas(e)", article: "das" },
+      { word: "Gaspedal(e)", article: "das" },
+      { word: "Gast(Gäste)", article: "der" },
+      { word: "Geburtstag", article: "der" },
+      { word: "Geburtstagskuchen", article: "der" },
+      { word: "Geburtstagstorte", article: "die" },
+      { word: "Gegenwart", article: "die" },
+      { word: "Geld", article: "das" },
+      { word: "Geldschein(e)", article: "der" },
+      { word: "Gemüse", article: "das" },
+      { word: "Gericht(e)", article: "das" },
+      { word: "Geschäftsreise(n)", article: "die" },
+      { word: "Geschlecht(er)", article: "das" },
+      { word: "Getränk", article: "das" },
+      { word: "Gewicht", article: "das" },
+      { word: "Gewohnheit(en)", article: "die" },
+      { word: "Giraffe", article: "die" },
+      { word: "Glas", article: "das" },
+      { word: "Gold", article: "das" },
+      { word: "Golf", article: "das" },
+      { word: "Gorilla", article: "der" },
+      { word: "Gott(Götter)", article: "der" },
+      { word: "Gramm(e)", article: "das" },
+      { word: "Größe", article: "die" },
+      { word: "Großeltern", article: "die" },
+      { word: "Großmutter", article: "die" },
+      { word: "Großvater", article: "der" },
+      { word: "Grundschule", article: "die" },
+      { word: "Grundschule(n)", article: "die" },
+      { word: "Gurke", article: "die" },
+      { word: "Gutschein(e)", article: "der" },
+      { word: "Gymnasium", article: "das" },
+      { word: "Haar(e)", article: "das" },
+      { word: "Haare", article: "die" },
+      { word: "Haartrockner", article: "der" },
+      { word: "Hahn", article: "der" },
+      { word: "Hahn(Hähner)", article: "der" },
+      { word: "Hähnchen", article: "das" },
+      { word: "Hals(Hälse)", article: "das" },
+      { word: "Halskette(n)", article: "die" },
+      { word: "Hamburger", article: "der" },
+      { word: "Hamster", article: "der" },
+      { word: "Hand", article: "die" },
+      { word: "Handy(s)", article: "das" },
+      { word: "Haus(Häuser)", article: "das" },
+      { word: "Hausaufgabe", article: "die" },
+      { word: "Haut(Häute)", article: "die" },
+      { word: "Heiligabend", article: "der" },
+      { word: "Heimat", article: "die" },
+      { word: "Heirat", article: "die" },
+      { word: "Heirat(en)", article: "die" },
+      { word: "Heizgerät", article: "das" },
+      { word: "Heizung", article: "die" },
+      { word: "Herbst", article: "der" },
+      { word: "Herr", article: "der" },
+      { word: "Herz(en)", article: "das" },
+      { word: "Hobby(s)", article: "das" },
+      { word: "Hochhaus(Hochhäuser)", article: "das" },
+      { word: "Hockey", article: "das" },
+      { word: "Hoffnung, -en", article: "die" },
+      { word: "Höhe(n)", article: "die" },
+      { word: "Homepage", article: "die" },
+      { word: "Honig", article: "der" },
+      { word: "Hose(n)", article: "die" },
+      { word: "Hotdog", article: "der" },
+      { word: "Hotel", article: "das" },
+      { word: "Humor, -e", article: "der" },
+      { word: "Hund", article: "der" },
+      { word: "Hunger", article: "der" },
+      { word: "Hut", article: "der" },
+      { word: "ICE", article: "der" },
+      { word: "Idee, -n", article: "die" },
+      { word: "Informatik", article: "die" },
+      { word: "Information", article: "die" },
+      { word: "Insel", article: "die" },
+      { word: "Insel(n)", article: "die" },
+      { word: "Internet", article: "das" },
+      { word: "Internet Explorer", article: "der" },
+      { word: "Internetcafe", article: "das" },
+      { word: "Interviewer", article: "der" },
+      { word: "Interviewerin", article: "die" },
+      { word: "Jacke", article: "die" },
+      { word: "Jahr,-e", article: "das" },
+      { word: "Januar", article: "der" },
+      { word: "Jazz", article: "der" },
+      { word: "Jeans", article: "die" },
+      { word: "Job", article: "der" },
+      { word: "Jogging", article: "das" },
+      { word: "Joghurt", article: "der" },
+      { word: "Joker", article: "der" },
+      { word: "Juli", article: "der" },
+      { word: "Junge", article: "der" },
+      { word: "junge Frau(jungen Frauen)", article: "die" },
+      { word: "Juni", article: "der" },
+      { word: "Kaffee", article: "der" },
+      { word: "Kaffeemaschine", article: "die" },
+      { word: "Kalender", article: "der" },
+      { word: "Kamera", article: "die" },
+      { word: "Kamillentee", article: "der" },
+      { word: "Karte", article: "die" },
+      { word: "Kartoffel", article: "die" },
+      { word: "Kartoffel(n)", article: "die" },
+      { word: "Karton", article: "der" },
+      { word: "Käse", article: "der" },
+      { word: "Katze", article: "die" },
+      { word: "Katze(n)", article: "die" },
+      { word: "Kaution(Kautionen)", article: "die" },
+      { word: "Ketchup", article: "der" },
+      { word: "Kind", article: "das" },
+      { word: "Kinderbett(en)", article: "das" },
+      { word: "Kindergarten(Kindergärten)", article: "der" },
+      { word: "Kinderwagen", article: "der" },
+      { word: "Kino(s)", article: "das" },
+      { word: "Kinokasse", article: "die" },
+      { word: "Kiosk", article: "der" },
+      { word: "Kirche", article: "die" },
+      { word: "Kiwi(s)", article: "die" },
+      { word: "Klasse", article: "die" },
+      { word: "Kleid(er)", article: "das" },
+      { word: "Kleiderschrank", article: "der" },
+      { word: "Kleiderschrank(Kleiderschränke)", article: "der" },
+      { word: "Kleidung", article: "die" },
+      { word: "Klimaanlage(n)", article: "die" },
+      { word: "Klo", article: "das" },
+      { word: "Klosett", article: "das" },
+      { word: "Koch(Köche)", article: "der" },
+      { word: "Kochen", article: "das" },
+      { word: "Köchin", article: "die" },
+      { word: "Köchin(nen)", article: "die" },
+      { word: "Kollege", article: "der" },
+      { word: "Kollege(n)", article: "der" },
+      { word: "Kollege(n)", article: "der" },
+      { word: "Kollegin(nen)", article: "die" },
+      { word: "Kollegin(nen)", article: "die" },
+      { word: "Konferenz(en)", article: "die" },
+      { word: "König(e)", article: "der" },
+      { word: "Konto", article: "das" },
+      { word: "Konzert", article: "das" },
+      { word: "Kopf", article: "der" },
+      { word: "Kopfhörer", article: "der" },
+      { word: "Kopfschmerz", article: "der" },
+      { word: "Koreaner", article: "der" },
+      { word: "Koreanerin", article: "die" },
+      { word: "Koreanisch", article: "das" },
+      { word: "Körper", article: "der" },
+      { word: "Körper,-", article: "der" },
+      { word: "Kosten", article: "die" },
+      { word: "Krankenkasse", article: "die" },
+      { word: "Krankenschwester", article: "die" },
+      { word: "Krankenschwester(n)", article: "die" },
+      { word: "Krankheit", article: "die" },
+      { word: "Kritik(en)", article: "die" },
+      { word: "Küche", article: "die" },
+      { word: "Kuchen", article: "der" },
+      { word: "Kühlschrank(Kühlschränke)", article: "der" },
+      { word: "Kultur(en)", article: "die" },
+      { word: "Kunde", article: "der" },
+      { word: "Kunst", article: "die" },
+      { word: "Kupon", article: "der" },
+      { word: "Kürbis", article: "der" },
+      { word: "kurze Hose(n)", article: "die" },
+      { word: "Kuss", article: "der" },
+      { word: "Lampe(n)", article: "die" },
+      { word: "Länge(n)", article: "die" },
+      { word: "Laptop", article: "der" },
+      { word: "Laune", article: "die" },
+      { word: "Leben", article: "das" },
+      { word: "Lebensmittel", article: "die" },
+      { word: "Lehrer", article: "der" },
+      { word: "Lehrer", article: "der" },
+      { word: "Lehrerin", article: "die" },
+      { word: "Lehrerin(nen)", article: "die" },
+      { word: "Leiter", article: "der" },
+      { word: "Lektion", article: "die" },
+      { word: "Lernen", article: "das" },
+      { word: "Lesen", article: "das" },
+      { word: "Leser", article: "der" },
+      { word: "Leute", article: "die" },
+      { word: "Licht(er)", article: "das" },
+      { word: "Liebe", article: "die" },
+      { word: "Lift", article: "der" },
+      { word: "Limone", article: "die" },
+      { word: "Linie", article: "die" },
+      { word: "Liter", article: "der" },
+      { word: "Löffel", article: "der" },
+      { word: "Löwe", article: "der" },
+      { word: "Luft", article: "die" },
+      { word: "Luftpost", article: "die" },
+      { word: "Lüge", article: "die" },
+      { word: "Luxus", article: "der" },
+      { word: "Mädchen", article: "das" },
+      { word: "Magazin", article: "das" },
+      { word: "Magen", article: "der" },
+      { word: "Mahlzeit", article: "die" },
+      { word: "Mai", article: "der" },
+      { word: "Make-up", article: "das" },
+      { word: "Mama(s)", article: "die" },
+      { word: "Mandarine(n)", article: "die" },
+      { word: "Mango", article: "die" },
+      { word: "Mango(s)", article: "die" },
+      { word: "Mann", article: "der" },
+      { word: "Marke", article: "die" },
+      { word: "Markt", article: "der" },
+      { word: "März", article: "der" },
+      { word: "Massage", article: "die" },
+      { word: "Mathematik", article: "die" },
+      { word: "Maus(Mäuse)", article: "die" },
+      { word: "Mayonnaise", article: "die" },
+      { word: "Meer(e)", article: "das" },
+      { word: "Meile(n)", article: "die" },
+      { word: "Meinung", article: "die" },
+      { word: "Melone(n)", article: "die" },
+      { word: "Menü", article: "das" },
+      { word: "Messe(n)", article: "die" },
+      { word: "Messer", article: "das" },
+      { word: "Meter", article: "der" },
+      { word: "Mikrowelle(n)", article: "die" },
+      { word: "Mikrowelle(n)", article: "die" },
+      { word: "Milch", article: "die" },
+      { word: "Minute(n)", article: "die" },
+      { word: "Mittag(e)", article: "der" },
+      { word: "Mittagessen", article: "das" },
+      { word: "Mittagspause", article: "die" },
+      { word: "Mittagsschlaf", article: "der" },
+      { word: "Mitte", article: "die" },
+      { word: "Mittelschule", article: "die" },
+      { word: "Mitternnacht", article: "die" },
+      { word: "Mittwoch", article: "der" },
+      { word: "Möbel", article: "das" },
+      { word: "Möbel", article: "die" },
+      { word: "Monat,-e", article: "der" },
+      { word: "Monatzkarte", article: "die" },
+      { word: "Monitor", article: "der" },
+      { word: "Montag", article: "der" },
+      { word: "Morgen", article: "der" },
+      { word: "Motor", article: "die" },
+      { word: "Muffin(s)", article: "der" },
+      { word: "Müll", article: "der" },
+      { word: "Mund", article: "der" },
+      { word: "Mund(Münder)", article: "der" },
+      { word: "Museum(Museen)", article: "das" },
+      { word: "Musik", article: "die" },
+      { word: "Musiker", article: "der" },
+      { word: "Mutter", article: "die" },
+      { word: "Muttersprache", article: "die" },
+      { word: "Nachbar(n)", article: "der" },
+      { word: "Nachmittag", article: "der" },
+      { word: "Nachricht", article: "die" },
+      { word: "Nachrichten", article: "die" },
+      { word: "Nacht", article: "die" },
+      { word: "Nachttour(en)", article: "die" },
+      { word: "Name", article: "der" },
+      { word: "Nase", article: "die" },
+      { word: "Natur, -en", article: "die" },
+      { word: "Nebel", article: "der" },
+      { word: "Neffe(n)", article: "der" },
+      { word: "Netzwerk(e)", article: "das" },
+      { word: "Neujahr", article: "der" },
+      { word: "Norden", article: "der" },
+      { word: "Note(n)", article: "die" },
+      { word: "Noten", article: "die" },
+      { word: "Notiz(en)", article: "die" },
+      { word: "November", article: "der" },
+      { word: "Nudel(n)", article: "die" },
+      { word: "Nummer", article: "die" },
+      { word: "Nutzer", article: "der" },
+      { word: "Obst", article: "das" },
+      { word: "Ofen", article: "der" },
+      { word: "Ohr(en)", article: "das" },
+      { word: "Oktober", article: "der" },
+      { word: "Öl", article: "das" },
+      { word: "Öl(e)", article: "das" },
+      { word: "Olivenöl", article: "das" },
+      { word: "Oma", article: "die" },
+      { word: "Opa", article: "der" },
+      { word: "Opa(s)", article: "der" },
+      { word: "Oper", article: "die" },
+      { word: "Operation", article: "die" },
+      { word: "Opfer", article: "das" },
+      { word: "Orange", article: "die" },
+      { word: "Ort", article: "der" },
+      { word: "Osten", article: "der" },
+      { word: "Paket", article: "das" },
+      { word: "Palast", article: "der" },
+      { word: "Papier", article: "das" },
+      { word: "Paprika(s)", article: "die" },
+      { word: "Parade", article: "die" },
+      { word: "Park", article: "der" },
+      { word: "Parkplatz", article: "der" },
+      { word: "Party", article: "die" },
+      { word: "Pass", article: "der" },
+      { word: "Passkontrolle(n)", article: "die" },
+      { word: "Passwort", article: "das" },
+      { word: "Patient", article: "der" },
+      { word: "Pause", article: "die" },
+      { word: "PC", article: "der" },
+      { word: "Person(en)", article: "die" },
+      { word: "Pfeffer", article: "der" },
+      { word: "Pflaume", article: "die" },
+      { word: "Pilz(e)", article: "der" },
+      { word: "Pinguin(e)", article: "der" },
+      { word: "Pizza", article: "die" },
+      { word: "Plan, Pläne", article: "der" },
+      { word: "Planet(en)", article: "der" },
+      { word: "Platz", article: "der" },
+      { word: "Polizei", article: "die" },
+      { word: "Polizeiamt", article: "das" },
+      { word: "Polizist", article: "der" },
+      { word: "Polizistin", article: "die" },
+      { word: "Popcorn", article: "das" },
+      { word: "Post", article: "die" },
+      { word: "Postamt", article: "das" },
+      { word: "Postkarte", article: "die" },
+      { word: "Postleitzahl", article: "die" },
+      { word: "Preis(e)", article: "der" },
+      { word: "Professor", article: "der" },
+      { word: "Professor(en)", article: "der" },
+      { word: "Professorin(nen)", article: "die" },
+      { word: "Prüfung", article: "die" },
+      { word: "Prüfung(en)", article: "die" },
+      { word: "Pullover", article: "der" },
+      { word: "Rabatt", article: "der" },
+      { word: "Rabatt(e)", article: "der" },
+      { word: "Rader(e)", article: "der" },
+      { word: "Radiergummi", article: "der" },
+      { word: "Radio", article: "das" },
+      { word: "Rasen", article: "der" },
+      { word: "Rasierapparat", article: "der" },
+      { word: "Rathaus", article: "das" },
+      { word: "Rauchen", article: "das" },
+      { word: "Rechnung", article: "die" },
+      { word: "Rechnung(en)", article: "die" },
+      { word: "Rechtsanwalt", article: "der" },
+      { word: "Regel", article: "die" },
+      { word: "Regelschmerzen", article: "die" },
+      { word: "Regen", article: "der" },
+      { word: "Regenschirm(e)", article: "der" },
+      { word: "Reise", article: "die" },
+      { word: "Reise(n)", article: "die" },
+      { word: "Rente(n)", article: "die" },
+      { word: "Reservierung(en)", article: "die" },
+      { word: "Restaurant", article: "das" },
+      { word: "Richtung(en)", article: "die" },
+      { word: "Rock(Röcke)", article: "der" },
+      { word: "Rockmusik", article: "die" },
+      { word: "Rolle", article: "die" },
+      { word: "Rose(n)", article: "die" },
+      { word: "Rotwein", article: "der" },
+      { word: "Router", article: "der" },
+      { word: "Rushhour", article: "die" },
+      { word: "Saft(Säfte)", article: "der" },
+      { word: "Salami", article: "die" },
+      { word: "Salat(e)", article: "der" },
+      { word: "Salbe", article: "die" },
+      { word: "Samstag", article: "der" },
+      { word: "Sandwich(es)", article: "das" },
+      { word: "Sänger", article: "der" },
+      { word: "Sängerin", article: "der" },
+      { word: "Sängerin(nen)", article: "die" },
+      { word: "Satz", article: "der" },
+      { word: "Sauberkeit", article: "die" },
+      { word: "Schal", article: "der" },
+      { word: "Schalter", article: "der" },
+      { word: "Schauspieler", article: "der" },
+      { word: "Schauspielerin", article: "die" },
+      { word: "Schauspielerin(nen)", article: "die" },
+      { word: "Schiff(e)", article: "das" },
+      { word: "Schkolade(n)", article: "die" },
+      { word: "Schlafen", article: "das" },
+      { word: "Schlafzimmer", article: "das" },
+      { word: "Schloss", article: "das" },
+      { word: "Schlüssel", article: "der" },
+      { word: "Schmerz", article: "der" },
+      { word: "Schrank", article: "der" },
+      { word: "Schublade", article: "die" },
+      { word: "Schule", article: "die" },
+      { word: "Schule(n)", article: "die" },
+      { word: "Schüler", article: "der" },
+      { word: "Schülerin", article: "die" },
+      { word: "Schülerin(nen)", article: "die" },
+      { word: "Schulter", article: "die" },
+      { word: "Schuluniform", article: "die" },
+      { word: "Schwägerin(nen)", article: "die" },
+      { word: "Schweinefleisch", article: "das" },
+      { word: "Schweiß", article: "der" },
+      { word: "Schweizerin", article: "die" },
+      { word: "Schwester", article: "die" },
+      { word: "Schwimmbad", article: "das" },
+      { word: "See", article: "die" },
+      { word: "See(n)", article: "der" },
+      { word: "Seite", article: "die" },
+      { word: "Sekretär(e)", article: "der" },
+      { word: "Sekretärin(nen)", article: "die" },
+      { word: "Semester", article: "das" },
+      { word: "Seminar", article: "das" },
+      { word: "Senf", article: "der" },
+      { word: "September", article: "der" },
+      { word: "Serviette(n)", article: "die" },
+      { word: "Shampoo", article: "das" },
+      { word: "Show, -s", article: "die" },
+      { word: "Silver", article: "das" },
+      { word: "Situation", article: "die" },
+      { word: "Ski", article: "der" },
+      { word: "Snack", article: "der" },
+      { word: "Socke", article: "die" },
+      { word: "Socke(n)", article: "die" },
+      { word: "Sofa", article: "das" },
+      { word: "Sofa(s)", article: "das" },
+      { word: "Sohn", article: "der" },
+      { word: "Sommer", article: "der" },
+      { word: "Sommerferien", article: "die" },
+      { word: "Sommersemester", article: "das" },
+      { word: "Sonne", article: "die" },
+      { word: "Sonnenbrille", article: "die" },
+      { word: "Sonntag", article: "der" },
+      { word: "Soße", article: "die" },
+      { word: "Spag(h)etti", article: "die" },
+      { word: "Spaß, Späße", article: "der" },
+      { word: "Speichern", article: "das" },
+      { word: "Speise", article: "die" },
+      { word: "Speisekarte", article: "die" },
+      { word: "Spiegelei", article: "das" },
+      { word: "Spielzeug(e)", article: "das" },
+      { word: "Spitze(n)", article: "die" },
+      { word: "Sport", article: "der" },
+      { word: "Sport,-e", article: "der" },
+      { word: "Sportschuhe", article: "die" },
+      { word: "Sprache", article: "die" },
+      { word: "Spüle(n)", article: "die" },
+      { word: "Spülmaschine", article: "die" },
+      { word: "Stäbchen", article: "das" },
+      { word: "Stadt", article: "die" },
+      { word: "Stadtplan", article: "der" },
+      { word: "Station", article: "die" },
+      { word: "Stau(s)", article: "der" },
+      { word: "Stock", article: "der" },
+      { word: "Strand", article: "der" },
+      { word: "Straße", article: "die" },
+      { word: "Straßenbahn", article: "die" },
+      { word: "Stress", article: "der" },
+      { word: "Strom", article: "der" },
+      { word: "Strumpfhose", article: "die" },
+      { word: "Student", article: "der" },
+      { word: "Studentin", article: "die" },
+      { word: "Studium", article: "das" },
+      { word: "Stufe", article: "die" },
+      { word: "Stuhl(Stühle)", article: "der" },
+      { word: "Stunde(n)", article: "die" },
+      { word: "Süden", article: "der" },
+      { word: "Supermarkt", article: "der" },
+      { word: "Suppe(n)", article: "die" },
+      { word: "T-Shirt", article: "das" },
+      { word: "Tablett", article: "das" },
+      { word: "Tablette(n)", article: "die" },
+      { word: "Tafel", article: "die" },
+      { word: "Tag", article: "der" },
+      { word: "Tag(e)", article: "der" },
+      { word: "Tanz", article: "der" },
+      { word: "Tasche", article: "die" },
+      { word: "Tasche(n)", article: "die" },
+      { word: "Tasse(n)", article: "die" },
+      { word: "Tastatur", article: "die" },
+      { word: "Tastatur(en)", article: "die" },
+      { word: "Taxi", article: "das" },
+      { word: "Team", article: "das" },
+      { word: "Tee", article: "der" },
+      { word: "Telefon(e)", article: "das" },
+      { word: "Teller", article: "der" },
+      { word: "Tennis", article: "das" },
+      { word: "Teppich(e)", article: "der" },
+      { word: "Termin", article: "der" },
+      { word: "Text", article: "der" },
+      { word: "Theater", article: "das" },
+      { word: "Thema", article: "das" },
+      { word: "Thema(Themen)", article: "das" },
+      { word: "Tisch(e)", article: "der" },
+      { word: "Toast", article: "der" },
+      { word: "Tochter", article: "die" },
+      { word: "Tod", article: "der" },
+      { word: "Tod(e)", article: "der" },
+      { word: "Toilette", article: "die" },
+      { word: "Toilette", article: "die" },
+      { word: "Toilette(n)", article: "die" },
+      { word: "Toilettenpapier", article: "das" },
+      { word: "Tomate", article: "die" },
+      { word: "Topf", article: "der" },
+      { word: "Tor(e)", article: "das" },
+      { word: "Tour", article: "die" },
+      { word: "Trainer", article: "der" },
+      { word: "Träne", article: "die" },
+      { word: "Tranerin", article: "die" },
+      { word: "Traube", article: "die" },
+      { word: "Treppe", article: "die" },
+      { word: "Trinkgeld", article: "das" },
+      { word: "Tür", article: "die" },
+      { word: "Tür(en)", article: "die" },
+      { word: "Türkin", article: "die" },
+      { word: "Turm", article: "der" },
+      { word: "Turnhalle", article: "die" },
+      { word: "Turnschuhe", article: "die" },
+      { word: "Tüte", article: "die" },
+      { word: "U-Bahn", article: "die" },
+      { word: "U-Bahn(en)", article: "die" },
+      { word: "Überstunde(n)", article: "die" },
+      { word: "Umweltschutz", article: "der" },
+      { word: "Uni", article: "die" },
+      { word: "Uniform", article: "die" },
+      { word: "Universität", article: "die" },
+      { word: "Universität(en)", article: "die" },
+      { word: "Untergeschoss", article: "das" },
+      { word: "Unterricht", article: "der" },
+      { word: "Urlaub", article: "der" },
+      { word: "Vater", article: "der" },
+      { word: "Vater(Väter)", article: "der" },
+      { word: "Vatertag", article: "der" },
+      { word: "Verband(Verbände)", article: "der" },
+      { word: "Villa", article: "die" },
+      { word: "Visum", article: "das" },
+      { word: "Volleyball", article: "der" },
+      { word: "Vormittag", article: "der" },
+      { word: "Vorname", article: "der" },
+      { word: "Vorstellung", article: "die" },
+      { word: "Vorstellungsgespräch", article: "das" },
+      { word: "Wagen", article: "der" },
+      { word: "Wand", article: "die" },
+      { word: "Waschhaus", article: "das" },
+      { word: "Waschmaschine(n)", article: "die" },
+      { word: "Wasser", article: "das" },
+      { word: "Wasserfall", article: "der" },
+      { word: "Wassermelone", article: "die" },
+      { word: "WC", article: "das" },
+      { word: "Webseite", article: "die" },
+      { word: "Weg", article: "der" },
+      { word: "Weihnachten", article: "das" },
+      { word: "Wein", article: "der" },
+      { word: "Weizenmehl", article: "das" },
+      { word: "Welt", article: "die" },
+      { word: "Welt(en)", article: "die" },
+      { word: "Werbung", article: "die" },
+      { word: "Werbung(en)", article: "die" },
+      { word: "Westen", article: "der" },
+      { word: "Wetter", article: "das" },
+      { word: "Wind", article: "der" },
+      { word: "Winter", article: "der" },
+      { word: "Winterferien", article: "die" },
+      { word: "Wintersemester", article: "das" },
+      { word: "Woche", article: "die" },
+      { word: "Wochenende", article: "das" },
+      { word: "Wochenende(n)", article: "das" },
+      { word: "Wodka", article: "der" },
+      { word: "Wohnort(e)", article: "der" },
+      { word: "Wohnung", article: "die" },
+      { word: "Wohnzimmer", article: "das" },
+      { word: "Wort", article: "das" },
+      { word: "Wörterbuch", article: "das" },
+      { word: "Wunsch, Wünsche", article: "der" },
+      { word: "Wurst", article: "die" },
+      { word: "Zahn", article: "der" },
+      { word: "Zahnschmerkzen", article: "die" },
+      { word: "Zebra", article: "das" },
+      { word: "Zeit", article: "die" },
+      { word: "Zentrale(n)", article: "die" },
+      { word: "Ziel,-e", article: "das" },
+      { word: "Zigarette(n)", article: "die" },
+      { word: "Zimmer", article: "das" },
+      { word: "Zitrone", article: "die" },
+      { word: "Zoo", article: "der" },
+      { word: "Zoo(s)", article: "der" },
+      { word: "Zucker", article: "der" },
+      { word: "Zug", article: "der" },
+      { word: "Zug(Züge)", article: "der" },
+      { word: "Zukunft", article: "die" },
+      { word: "Zwiebel", article: "die" }
+      // 🔸 여기에 엑셀에서 변환한 데이터를 이어서 추가하세요
+    ];
+
+    // -------------------------
+    // 퀴즈 로직
+    // -------------------------
+    let currentItem = null;
+    let answered = false;
+
+    function nextGenderQuestion() {
+      answered = false;
+      document.getElementById("gender-result").textContent = "";
+      document.getElementById("gender-next-btn").style.display = "none";
+
+      // 랜덤 문제 선택
+      currentItem = quizData[Math.floor(Math.random() * quizData.length)];
+      document.getElementById("gender-question").textContent = `【${currentItem.word}】`;
+
+      const options = ["der", "die", "das"];
+      const container = document.getElementById("gender-options");
+      container.innerHTML = options
+        .map((opt, i) => `<button onclick="checkGenderAnswer(this, '${opt}')">${opt}</button>`)
+        .join("");
+    }
+
+    function checkGenderAnswer(btn, choice) {
+      if (answered) return;
+      answered = true;
+      const result = document.getElementById("gender-result");
+      const correct = currentItem.article;
+
+      const buttons = document.querySelectorAll("#gender-options button");
+      buttons.forEach(b => {
+        b.disabled = true;
+        if (b.textContent === correct) {
+          b.style.backgroundColor = "#28a745"; // 정답 초록색
+          b.style.color = "white";
+        }
+      });
+
+      if (choice === correct) {
+        result.textContent = "✅ 정답입니다!";
+      } else {
+        result.textContent = `❌ 오답입니다. 정답: ${correct} ${currentItem.word}`;
+        btn.style.backgroundColor = "#dc3545"; // 오답 빨강색
+        btn.style.color = "white";
+      }
+
+      document.getElementById("gender-next-btn").style.display = "inline-block";
+    }
+
+    // -------------------------
+    // 키보드 조작
+    // -------------------------
+    document.addEventListener("keydown", (e) => {
+  // ===== [1] 명사 성별 퀴즈 =====
+  if (document.getElementById("gender").classList.contains("active")) {
+    if (!answered) {
+      if (e.key === "1") checkGenderAnswer(document.querySelectorAll("#gender-options button")[0], "der");
+      if (e.key === "2") checkGenderAnswer(document.querySelectorAll("#gender-options button")[1], "die");
+      if (e.key === "3") checkGenderAnswer(document.querySelectorAll("#gender-options button")[2], "das");
+    } else if (e.key === "Enter") {
+      nextGenderQuestion();
+    }
+  }
+
+  // ===== [2] 수사 퀴즈 =====
+  else if (document.getElementById("numbers").classList.contains("active")) {
+    if (e.key === "Enter") {
+      if (!numbersAnswered) checkNumbersAnswer();
+      else nextNumbersQuestion();
+    }
+  }
+});
+
+
+
   </script>
 </body>
 </html>
-
