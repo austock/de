@@ -101,6 +101,20 @@
   transform: scale(1.03);
 }
 
+#numbers-list-table {
+    /* 1. 테이블의 너비를 명확하게 지정합니다. (100% 미만) */
+    /* 현재 내용에 맞게 좁게 설정하거나, 원하는 최대 너비로 설정합니다. */
+    width: 350px; /* 예시: 필요한 만큼의 너비만 차지하도록 설정 */
+    
+    /* 2. 좌우 여백을 auto로 설정하여 중앙 정렬을 실행합니다. */
+    margin-left: auto;
+    margin-right: auto;
+    
+    /* 3. (선택 사항) 상하 여백 및 다른 스타일 */
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
   </style>
 </head>
 <body>
@@ -108,6 +122,7 @@
   <nav>
     <button onclick="showPage('main')">메인 페이지</button>
     <button onclick="showPage('numbers')">수사 문제</button>
+    <button onclick="showPage('numbers-list')">수사 목록</button>
     <button onclick="showPage('gender')">명사 성별</button>
     <button onclick="showPage('about')">About</button>
   </nav>
@@ -159,6 +174,14 @@
 </div>
 
   </div>
+
+<div id="numbers-list" class="page" style="display: none;">
+    <h1>독일어 수사 목록 (0-100)</h1>
+    <p>클릭하여 음성을 들어보세요.</p>
+    <table id="numbers-list-table">
+        </table>
+</div>
+
 
   <!-- 명사 성별 퀴즈 -->
   <div id="gender" class="page">
@@ -219,6 +242,9 @@
     94: "vierundneunzig", 95: "fünfundneunzig", 96: "sechsundneunzig",
     97: "siebenundneunzig", 98: "achtundneunzig", 99: "neunundneunzig", 100: "hundert"
     };
+
+    generateNumbersList();
+    nextNumbersQuestion();
 
     function switchNumMode(mode) {
         numMode = mode;
@@ -334,6 +360,7 @@ function checkNumbersAnswer() {
 }
 
 
+
 // 오디오 재생 함수
 function playNumbersAudio(num) {
     const audio = document.getElementById('numbers-audio');
@@ -344,16 +371,83 @@ function playNumbersAudio(num) {
     audio.play(); // 재생
 }
 
+// [추가] 수사 목록 생성 함수
+function generateNumbersList() {
+    const table = document.getElementById('numbers-list-table');
+    if (!table) return;
+
+    // 테이블 헤더 생성
+    let html = `
+        <tr>
+            <th>숫자</th>
+            <th>독일어</th>
+            <th>소리 듣기</th>
+        </tr>
+    `;
+
+    // 0부터 100까지 반복하여 행 생성
+    for (let i = 0; i <= 100; i++) {
+        const word = numbersDe[i];
+        if (!word) continue;
+
+        let displayWord = word;
+        
+        // --- 불규칙 조건 체크 ---
+        const isIrregular = 
+            // 0부터 12까지 (모두 기본형으로 불규칙)
+            i <= 12 || 
+            // 16, 17 (축약형)
+            i === 16 || i === 17 ||
+            // 10의 배수 중 특수형 (20, 30, 60, 70)
+            i === 20 || i === 30 || i === 60 || i === 70 || 
+            // 21, 31, 41, ... 91 (합성 시 'eins'에서 's'가 탈락한 'ein' 사용)
+            (i > 20 && i < 100 && i % 10 === 1);
+        
+        // 불규칙 조건에 해당하면 볼드 + 밑줄 처리
+        if (isIrregular) {
+            displayWord = `<b><u>${word}</u></b>`;
+        }
+
+        // 행 생성 (수정된 displayWord 사용)
+        html += `
+            <tr>
+                <td>${i}</td>
+                <td>${displayWord}</td>
+                <td>
+                    <button onclick="playNumbersAudio(${i})">🔊</button>
+                </td>
+            </tr>
+        `;
+    }
+    
+    table.innerHTML = html;
+}
+
 
     // -------------------------
     // 페이지 전환
     // -------------------------
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(pageId).classList.add('active');
-      if (pageId === 'gender') nextGenderQuestion(); // 명사 성별 페이지 진입 시 자동 문제 출제
-      if (pageId === 'numbers') nextNumbersQuestion(); // 수사 퀴즈 페이지 진입 시 자동 문제 출제
+function showPage(pageId) {
+    // 모든 페이지를 숨기고 active 클래스 제거
+    document.querySelectorAll('.page').forEach(p => {
+        p.style.display = 'none'; // [수정/추가] 인라인 스타일로 숨김
+        p.classList.remove('active');
+    });
+
+    // 요청된 페이지를 표시하고 active 클래스 추가
+    const targetPage = document.getElementById(pageId);
+    targetPage.style.display = 'block'; // [수정/추가] 인라인 스타일로 표시
+    targetPage.classList.add('active');
+
+    // 페이지별 초기화/문제 출제 로직
+    if (pageId === 'gender') nextGenderQuestion();
+    if (pageId === 'numbers') nextNumbersQuestion();
+
+    // [추가] 수사 목록 페이지 진입 시 테이블 생성 함수 호출
+    if (pageId === 'numbers-list') {
+        generateNumbersList();
     }
+}
 
     // -------------------------
     // 명사 성별 퀴즈 데이터
